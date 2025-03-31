@@ -109,13 +109,23 @@ func (p *parser) GetCurrentBlock() int {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Unexpected response status: %d\n", resp.StatusCode)
+		return -1
+	}
+
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		fmt.Println("Error decoding JSONRPC response:", err)
 		return -1
 	}
 
-	blockHex := result["result"].(string)
+	blockHex, ok := result["result"].(string)
+	if !ok {
+		fmt.Println("Invalid block number format in JSONRPC response")
+		return -1
+	}
+
 	var blockNumber int
 	fmt.Sscanf(blockHex, "0x%x", &blockNumber)
 	return blockNumber
